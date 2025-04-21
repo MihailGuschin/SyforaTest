@@ -3,6 +3,7 @@ using Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Syfora_Test.Domain;
+using XmlData;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,7 @@ if (provider == "InMemory")
 else if (provider == "Xml")
 {
     builder.Services.AddScoped<IUserService, XmlUserService>();
+    builder.Services.AddScoped<XmlUserReader>();
 }
 else if (provider == "MsSql")
 {

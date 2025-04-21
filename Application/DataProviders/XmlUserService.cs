@@ -1,34 +1,24 @@
-using System.Xml.Linq;
 using Application.Interfaces;
 using Syfora_Test.Models;
+using System.Xml.Linq;
+using XmlData;
 
 namespace Application.DataProviders
 {
     public class XmlUserService : IUserService
-    {
-        private const string FilePath = "users.xml";
+    {        
+        private readonly XmlUserReader _xmlReader;
 
-        private XDocument LoadDocument()
+        public XmlUserService(XmlUserReader xmlReader) 
         {
-            if (!File.Exists(FilePath))
-            {
-                var doc = new XDocument(new XElement("Users"));
-                doc.Save(FilePath);
-                return doc;
-            }
-            return XDocument.Load(FilePath);
-        }
-
-        private void SaveDocument(XDocument doc)
-        {
-            doc.Save(FilePath);
+            _xmlReader = xmlReader;
         }
 
         public async Task<List<UserDto>> GetAllUsersAsync()
         {
             return await Task.Run(() =>
             {
-                var doc = LoadDocument();
+                var doc = _xmlReader.LoadDocument();
                 var users = doc.Root.Elements("User")
                     .Select(x => new UserDto
                     {
@@ -45,7 +35,7 @@ namespace Application.DataProviders
         {
             return await Task.Run(() =>
             {
-                var doc = LoadDocument();
+                var doc = _xmlReader.LoadDocument();
                 var userElement = doc.Root.Elements("User")
                     .FirstOrDefault(x => Guid.Parse(x.Element("Id")?.Value ?? Guid.Empty.ToString()) == id);
                 if (userElement == null)
@@ -65,7 +55,7 @@ namespace Application.DataProviders
         {
             return await Task.Run(() =>
             {
-                var doc = LoadDocument();
+                var doc = _xmlReader.LoadDocument();
                 var id = Guid.NewGuid();
                 var newUser = new XElement("User",
                     new XElement("Id", id),
@@ -75,7 +65,7 @@ namespace Application.DataProviders
                 );
 
                 doc.Root.Add(newUser);
-                SaveDocument(doc);
+                _xmlReader.SaveDocument(doc);
 
                 user.Id = id;
                 return user;
@@ -86,7 +76,7 @@ namespace Application.DataProviders
         {
             await Task.Run(() =>
             {
-                var doc = LoadDocument();
+                var doc = _xmlReader.LoadDocument();
 
                 var userElement = doc.Root.Elements("User")
                     .FirstOrDefault(x => Guid.Parse(x.Element("Id")?.Value ?? Guid.Empty.ToString()) == user.Id);
@@ -95,7 +85,7 @@ namespace Application.DataProviders
                 userElement.SetElementValue("FirstName", user.FirstName);
                 userElement.SetElementValue("LastName", user.LastName);
 
-                SaveDocument(doc);
+                _xmlReader.SaveDocument(doc);
             });
         }
 
@@ -103,14 +93,14 @@ namespace Application.DataProviders
         {
             await Task.Run(() =>
             {
-                var doc = LoadDocument();
+                var doc = _xmlReader.LoadDocument();
 
                 var userElement = doc.Root.Elements("User")
                     .FirstOrDefault(x => Guid.Parse(x.Element("Id")?.Value ?? Guid.Empty.ToString()) == id);
                 if (userElement != null)
                 {
                     userElement.Remove();
-                    SaveDocument(doc);
+                    _xmlReader.SaveDocument(doc);
                 }
             });
         }
@@ -122,7 +112,7 @@ namespace Application.DataProviders
 
             return await Task.Run(() =>
             {
-                var doc = LoadDocument();
+                var doc = _xmlReader.LoadDocument();
                 return doc.Root.Elements("User")
                     .Any(x => string.Equals(x.Element("Login")?.Value, login, StringComparison.OrdinalIgnoreCase));
             });
