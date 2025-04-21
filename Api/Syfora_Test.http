@@ -1,0 +1,6 @@
+@Syfora_Test_HostAddress = http://localhost:5261
+
+GET {{Syfora_Test_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

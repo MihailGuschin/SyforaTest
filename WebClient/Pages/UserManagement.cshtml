@@ -1,0 +1,170 @@
+@page
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
+    ViewData["Title"] = "User Management";
+    var apiBaseUrl = Configuration["ApiBaseUrl"] ?? "";
+}
+
+<h2>User Management</h2>
+
+<div>
+    <form id="userForm">
+        <input type="hidden" id="userIdInput" required />
+        <label for="userFirstName">First Name:</label>
+        <input type="text" id="userFirstName" required />
+        <label for="userLastName">Last Name:</label>
+        <input type="text" id="userLastName" required />
+        <label for="userLogin">Login:</label>
+        <input type="text" id="userLogin" required />
+        <button type="submit" id="saveButton">Create</button>
+        <button type="button" id="cancelButton" style="display:none;">Cancel</button>
+    </form>
+</div>
+
+<table border="1" id="usersTable" style="margin-top:20px; width:100%;">
+    <thead>
+        <tr>
+            <th>Login</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- User rows will be populated here -->
+    </tbody>
+</table>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const apiBaseUrl = "@apiBaseUrl";
+
+        const userForm = document.getElementById("userForm");
+        const userLoginInput = document.getElementById("userLogin");
+        const userFirstNameInput = document.getElementById("userFirstName");
+        const userLastNameInput = document.getElementById("userLastName");
+        const userIdInput = document.getElementById("userIdInput");
+        const saveButton = document.getElementById("saveButton");
+        const cancelButton = document.getElementById("cancelButton");
+        const usersTableBody = document.querySelector("#usersTable tbody");
+
+        function fetchUsers() {
+            fetch(`${apiBaseUrl}/api/User`)
+                .then(response => response.json())
+                .then(data => {
+                    usersTableBody.innerHTML = "";
+                    data.forEach(user => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${user.login}</td>
+                            <td>${user.firstName}</td>
+                            <td>${user.lastName}</td>
+                            <td>
+                                <button class="editBtn" data-id="${user.id}">Edit</button>
+                                <button class="deleteBtn" data-id="${user.id}">Delete</button>
+                            </td>
+                        `;
+                        usersTableBody.appendChild(row);
+                    });
+                    attachEventListeners();
+                });
+        }
+
+        function attachEventListeners() {
+            document.querySelectorAll(".editBtn").forEach(button => {
+                button.addEventListener("click", function () {
+                    const id = this.getAttribute("data-id");
+                    fetch(`${apiBaseUrl}/api/User/${id}`)
+                        .then(response => {
+                            if (!response.ok) return response.text().then(text => { throw new Error(text) })
+                            return response.json();
+                        })
+                        .then(user => {
+                            userIdInput.value = user.id;
+                            userLoginInput.value = user.login;
+                            userFirstNameInput.value = user.firstName;
+                            userLastNameInput.value = user.lastName;
+                            saveButton.textContent = "Update";
+                            cancelButton.style.display = "inline";
+                        })
+                        .catch(err => alert(err.message));
+                });
+            });
+
+            document.querySelectorAll(".deleteBtn").forEach(button => {
+                button.addEventListener("click", function () {
+                    const id = this.getAttribute("data-id");
+                    if (confirm(`Are you sure you want to delete user ${id}?`)) {
+                        fetch(`${apiBaseUrl}/api/User/${id}`, {
+                            method: "DELETE"
+                        })
+                        .then(response => {
+                            if (!response.ok) return response.text().then(text => { throw new Error(text) })
+                            fetchUsers();
+                        })
+                        .catch(err => alert(err.message));
+                    }
+                });
+            });
+        }
+
+        userForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            
+            const id = userIdInput.value
+            const login = userLoginInput.value;
+            const firstName = userFirstNameInput.value;
+            const lastName = userLastNameInput.value;
+
+            if (!firstName || !lastName) {
+                alert("First Name and Last Name are required.");
+                return;
+            }           
+
+            if (id) {
+                var user = { id: id, login: login, firstName: firstName, lastName: lastName };
+                fetch(`${apiBaseUrl}/api/User/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(user)
+                })
+                .then(response => {
+                    if (!response.ok) return response.text().then(text => { throw new Error(text) })
+                    resetForm();
+                    fetchUsers();
+                })
+                .catch(err => alert(err.message));
+            } else {
+                var user = { login: login, firstName: firstName, lastName: lastName };
+                fetch(`${apiBaseUrl}/api/User`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(user)
+                })
+                .then(response => {
+                    if (!response.ok) return response.text().then(text => { throw new Error(text) })
+                    resetForm();
+                    fetchUsers();
+                })
+                .catch(err => alert(err.message));
+            }
+        });
+
+        cancelButton.addEventListener("click", function () {
+            resetForm();
+        });
+
+        function resetForm() {
+            userIdInput.value = "";
+            userLoginInput.value = "";
+            userFirstNameInput.value = "";
+            userLastNameInput.value = "";
+            saveButton.textContent = "Create";
+            cancelButton.style.display = "none";
+        }
+
+        fetchUsers();
+    });
+</script>
+}
