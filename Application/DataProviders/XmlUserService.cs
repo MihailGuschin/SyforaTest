@@ -1,4 +1,5 @@
 using Application.Interfaces;
+using Application.Models;
 using Syfora_Test.Models;
 using System.Xml.Linq;
 using XmlData;
@@ -14,13 +15,13 @@ namespace Application.DataProviders
             _xmlReader = xmlReader;
         }
 
-        public async Task<List<UserDto>> GetAllUsersAsync()
+        public async Task<List<UserDtoOut>> GetAllUsersAsync()
         {
             return await Task.Run(() =>
             {
                 var doc = _xmlReader.LoadDocument();
                 var users = doc.Root.Elements("User")
-                    .Select(x => new UserDto
+                    .Select(x => new UserDtoOut
                     {
                         Id = Guid.Parse(x.Element("Id")?.Value ?? Guid.Empty.ToString()),
                         Login = x.Element("Login")?.Value,
@@ -31,7 +32,7 @@ namespace Application.DataProviders
             });
         }
 
-        public async Task<UserDto?> GetUserAsync(Guid id)
+        public async Task<UserDtoOut?> GetUserAsync(Guid id)
         {
             return await Task.Run(() =>
             {
@@ -41,7 +42,7 @@ namespace Application.DataProviders
                 if (userElement == null)
                     return null;
 
-                return new UserDto
+                return new UserDtoOut
                 {
                     Id = id,
                     Login = userElement.Element("Login")?.Value,
@@ -51,7 +52,7 @@ namespace Application.DataProviders
             });
         }
 
-        public async Task<UserDto> AddUserAsync(UserDto user)
+        public async Task<UserDtoOut> AddUserAsync(UserDtoIn user)
         {
             return await Task.Run(() =>
             {
@@ -67,19 +68,24 @@ namespace Application.DataProviders
                 doc.Root.Add(newUser);
                 _xmlReader.SaveDocument(doc);
 
-                user.Id = id;
-                return user;
+                return new UserDtoOut
+                {
+                    Id = id,
+                    Login = user.Login,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName
+                };
             });
         }
 
-        public async Task UpdateUserAsync(UserDto user)
+        public async Task UpdateUserAsync(Guid id, UserDtoIn user)
         {
             await Task.Run(() =>
             {
                 var doc = _xmlReader.LoadDocument();
 
                 var userElement = doc.Root.Elements("User")
-                    .FirstOrDefault(x => Guid.Parse(x.Element("Id")?.Value ?? Guid.Empty.ToString()) == user.Id);
+                    .FirstOrDefault(x => Guid.Parse(x.Element("Id")?.Value ?? Guid.Empty.ToString()) == id);
 
                 userElement.SetElementValue("Login", user.Login);
                 userElement.SetElementValue("FirstName", user.FirstName);

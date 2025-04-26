@@ -1,14 +1,15 @@
+using Application.Models;
 using Syfora_Test.Models;
 
 namespace Application.Interfaces
 {
     public interface IUserService
     {
-        Task<List<UserDto>> GetAllUsersAsync();
-        Task<UserDto?> GetUserAsync(Guid id);
+        Task<List<UserDtoOut>> GetAllUsersAsync();
+        Task<UserDtoOut?> GetUserAsync(Guid id);
         Task<bool> IsLoginExist(string login);
-        Task<UserDto> AddUserAsync(UserDto user);
-        Task UpdateUserAsync(UserDto user);
+        Task<UserDtoOut> AddUserAsync(UserDtoIn user);
+        Task UpdateUserAsync(Guid id, UserDtoIn user);
         Task DeleteUserAsync(Guid id);
     }
 }

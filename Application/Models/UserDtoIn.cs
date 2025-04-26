@@ -2,10 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Syfora_Test.Models
 {
-    public class UserDto
+    public class UserDtoIn
     {
-        public Guid? Id { get; set; }
-
         [Required]
         public string Login { get; set; }
 

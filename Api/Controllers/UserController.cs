@@ -1,7 +1,6 @@
 using Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Syfora_Test.Models;
-using System.Net;
 
 namespace Syfora_Test.Controllers
 {
@@ -32,7 +31,7 @@ namespace Syfora_Test.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateUser([FromBody] UserDto userModel)
+        public async Task<IActionResult> CreateUser([FromBody] UserDtoIn userModel)
         {
             try
             {                
@@ -50,7 +49,7 @@ namespace Syfora_Test.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserDto user)
+        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UserDtoIn user)
         {
             try
             {
@@ -58,7 +57,7 @@ namespace Syfora_Test.Controllers
                 {
                     return NotFound();
                 }                
-                await _userService.UpdateUserAsync(user);
+                await _userService.UpdateUserAsync(id, user);
                 return NoContent();
             }
             catch (Exception ex)

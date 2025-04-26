@@ -1,4 +1,5 @@
 using Application.Interfaces;
+using Application.Models;
 using Syfora_Test.Domain;
 using Syfora_Test.Models;
 
@@ -13,13 +14,13 @@ namespace Application.DataProviders
             _userRepository = userRepository;
         }
 
-        public async Task<List<UserDto>> GetAllUsersAsync()
+        public async Task<List<UserDtoOut>> GetAllUsersAsync()
         {
             var users = await _userRepository.GetAllUsersAsync();
             return users.Select(u => Map(u)).ToList();
         }
 
-        public async Task<UserDto?> GetUserAsync(Guid id)
+        public async Task<UserDtoOut?> GetUserAsync(Guid id)
         {
             var user = await _userRepository.GetUserAsync(id);
             return user == null ? null : Map(user);
@@ -31,17 +32,16 @@ namespace Application.DataProviders
             return user != null;
         }
 
-        public async Task<UserDto> AddUserAsync(UserDto userDto)
+        public async Task<UserDtoOut> AddUserAsync(UserDtoIn userDto)
         {
             var user = MapUserDtoToUser(userDto);
             await _userRepository.AddUserAsync(user);
-            userDto.Id = user.Id;
-            return userDto;
+            return Map(user);
         }
 
-        public async Task UpdateUserAsync(UserDto userDto)
+        public async Task UpdateUserAsync(Guid id, UserDtoIn userDto)
         {
-            var user = await _userRepository.GetUserAsync(userDto.Id!.Value);
+            var user = await _userRepository.GetUserAsync(id);
 
             if (user == null) throw new KeyNotFoundException("User not found");
 
@@ -61,9 +61,9 @@ namespace Application.DataProviders
             await _userRepository.DeleteUserAsync(user);
         }
 
-        private UserDto Map(User user)
+        private UserDtoOut Map(User user)
         {
-            return new UserDto
+            return new UserDtoOut
             {
                 Id = user.Id,
                 Login = user.Login,
@@ -72,7 +72,7 @@ namespace Application.DataProviders
             };
         }
 
-        private User MapUserDtoToUser(UserDto userDto)
+        private User MapUserDtoToUser(UserDtoIn userDto)
         {
             return new User
             {
